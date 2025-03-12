@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 import ee
 # from google.auth.transport.requests import Request
 from google.oauth2 import service_account
-# import json
+import json
 
 # Initialize FastAPI
 app = FastAPI()
@@ -28,6 +28,8 @@ app.add_middleware(
 # ee.Authenticate() 
 import os
 credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+
+credentials_json = json.loads(credentials_json)
 credentials = service_account.Credentials.from_service_account_info(credentials_json)
 # Initialize Google Earth Engine
 ee.Initialize(project="ee-harshsmj1504")
