@@ -2,9 +2,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 import ee
-from google.auth.transport.requests import Request
-from google.oauth2 import service_account
-import json
+# from google.auth.transport.requests import Request
+# from google.oauth2 import service_account
+# import json
 
 # Initialize FastAPI
 app = FastAPI()
