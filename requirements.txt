@@ -1,4 +1,7 @@
 fastapi
 pydantic
 uvicorn
+starlette
+google-auth-oauthlib
+google-auth
 earthengine-api
