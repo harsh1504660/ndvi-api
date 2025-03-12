@@ -32,7 +32,8 @@ credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
 credentials_json = json.loads(credentials_json)
 credentials = service_account.Credentials.from_service_account_info(credentials_json)
 # Initialize Google Earth Engine
-ee.Initialize(project="ee-harshsmj1504")
+ee.Initialize(credentials=ee.ServiceAccountCredentials.from_json_keyfile_dict(
+    json.loads(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))),project="ee-harshsmj1504")
 
 # Define the request body model
 class AreaRequest(BaseModel):
