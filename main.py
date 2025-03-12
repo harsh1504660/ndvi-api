@@ -26,9 +26,9 @@ app.add_middleware(
 )
 # Initialize Google Earth Engine
 # ee.Authenticate() 
-credentials = service_account.Credentials.from_service_account_file(
-    'marine-fusion-423921-r9-3755fae30519.json'
-)
+import os
+credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
+credentials = service_account.Credentials.from_service_account_info(credentials_json)
 # Initialize Google Earth Engine
 ee.Initialize(project="ee-harshsmj1504")
 
