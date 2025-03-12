@@ -25,12 +25,23 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 # Initialize Google Earth Engine
-# ee.Authenticate() 
+ee.Authenticate() 
 import os
-credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-print(credentials_json)
-credentials_json = json.loads(credentials_json)
-credentials = service_account.Credentials.from_service_account_info(credentials_json)
+# credentials_json = {
+#   "type": "service_account",
+#   "project_id": "marine-fusion-423921-r9",
+#   "private_key_id": "3755fae305191e12b5780dba73954dbf0b8328f5",
+#   "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQC0+QSu7bhL5L8v\nZI8WuU6gibYZfDQ0fHDZ+v1HMP4dRJSeX41/cgZbxmjz89pCqE/4ZD/QBjZn7wcE\n0iLGRzSrTxAEfojT101cxai+xKx84Yn8q2GCRnPikeR7CF1k+GHcF93YqOLCEEV3\nd5aGV9TKUMRRVsZ4LproqlRuTRpM9m1sIKe+qp71aVNSf84H9DFgvrONoyFxV+oI\n/NYXPY306Ro62yBcSU4dBRyP0xJeAam1lfjGG96/JNaxm+xM/S6tykScUvmzu9bW\nMbIBcZeJi87eEEoes6h4IABNpiuVbfAL3GPUEv7lfDfH9lYfscSZKI0bTe/Hu8qN\nVJwRWl3rAgMBAAECggEAAVtKsA5z8ek9derdrxLoecCW6sWICrf17TKvez0Sx/ay\nd0wmXmiytNDTORw27CXZeenCRjWXjIVp/U0p5U7wdEzBlvdMH4t2BqQj5CaIKbpg\nRkw4Gaj8wXfhhjFm+W79dK1f8ZthLt00CKHBUshbin2ymoXRgx8XXZj39rLK58+Y\n3JB0m2ZZWdQEYNb78SLQp166ECKxaNLPaBYqrvDglnxl8m6Od2kdgDCMK4sRl4tu\nHGF2q1HG01IdCbd1CT623KGHhH0wZct+ergx8lmGhCuSWQSNPMPOsvvR/Ter+DU1\nyq4vBOb/6lC6gX8gKKPZ5cs0frVAzSxd1xFtVD5eAQKBgQDz490VaABqcDU1GLEt\npnha3yVjwzIXf08GxpF+GWQ5Kzdp3zcJ/klOmdUBPat0ImOmbjrgOo0HXJlU7Jp+\nXy72tu3z5Bh+fQfgncs9xumyAry1zEt7daH1LqqeaUEr7hYIykDchCQyr+XuKh4p\nxkSx95VOfiC4CR0XrElLkmOQmwKBgQC99WY5eFHCKgsXmDVyMGFYpd5FcwRk2Y6l\nIf4PfK1K7+UGh1rn7jWdLN3yKtibXhvRSM7G++GCCbFRGQtfnyybtJKIoQArenMi\nrvoHIY3wBYQU5qxczdaO8fgwoBPxxnAuYu+Wyf6aLtPgt7cN7HQWfUsMEibGrTvh\nnEQ0h1t08QKBgBphjnuPSWQ6CPdaWWf3ttMViiTVa2ixQ6oW9ovuUTIB47eXBowV\nLnbLGwhMVGx2f9Lz33h7vN+L+6X9BeUfhKP5O5oDFUcxXRXF28Mt7f9sXl9H3u5W\n1hMAXkJOXldTJJ0Ey6lOvd+huTxe3+5i3PFnN4ZLDFz712LFJxR+nDh7AoGAeh3P\nSLTLwomqtdFY0n69pfKDsJvfQEIIDKqMnEInWVxdHFRZoW4ms1NLn0niFAds1J78\npzj34NQAVMVH5YH7eGGeLg1qgYjniW15OKpeh+XT4mfkeIivHRf62K+gArbyGS/r\nHEHg1heyh+0y1dWjT23el/T3TpPBQilmQ2qc5dECgYBVpRLHkEOWHpN5mlnthTdr\nDxG/SSBZWJq8oqM7YUxCmzAyaRiVoE7xzyohaqwP4B50zq+swbasRtAA1VsrO1Mk\nmuCObLFuVfQfiWDivEZ87kRlED6QI5bwv/e+0csOjquCjZIEW8EPlL6BWdMxA5Qz\nmFcNVRW0tiy+isBvBTCddQ==\n-----END PRIVATE KEY-----\n",
+#   "client_email": "earth-engine-service-account@marine-fusion-423921-r9.iam.gserviceaccount.com",
+#   "client_id": "106253643210164038943",
+#   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+#   "token_uri": "https://oauth2.googleapis.com/token",
+#   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+#   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/earth-engine-service-account%40marine-fusion-423921-r9.iam.gserviceaccount.com",
+#   "universe_domain": "googleapis.com"
+# }
+
+# credentials = service_account.Credentials.from_service_account_info(credentials_json)
 # Initialize Google Earth Engine
 ee.Initialize(project="ee-harshsmj1504")
 
