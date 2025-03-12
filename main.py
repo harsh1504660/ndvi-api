@@ -28,7 +28,7 @@ app.add_middleware(
 # ee.Authenticate() 
 import os
 credentials_json = os.getenv('GOOGLE_CREDENTIALS_JSON')
-
+print(credentials_json)
 credentials_json = json.loads(credentials_json)
 credentials = service_account.Credentials.from_service_account_info(credentials_json)
 # Initialize Google Earth Engine
