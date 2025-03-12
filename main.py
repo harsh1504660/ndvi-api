@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from starlette.middleware.cors import CORSMiddleware
 import ee
 # from google.auth.transport.requests import Request
-# from google.oauth2 import service_account
+from google.oauth2 import service_account
 # import json
 
 # Initialize FastAPI
@@ -25,7 +25,10 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 # Initialize Google Earth Engine
-ee.Authenticate() 
+# ee.Authenticate() 
+credentials = service_account.Credentials.from_service_account_file(
+    'marine-fusion-423921-r9-3755fae30519.json'
+)
 # Initialize Google Earth Engine
 ee.Initialize(project="ee-harshsmj1504")
 
