@@ -1,21 +1,19 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os 
+import json
 import ee
 
 # Initialize Google Earth Engine
-service_account_json = os.getenv("GEE_CREDENTIALS")
-print("="*50)
-print(service_account_json)
+
 print("="*50)
 
-if service_account_json:
-    with open("/tmp/service-account.json", "w") as f:
-        f.write(service_account_json)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/service-account.json"
-
+service_account_info = json.loads(os.getenv('GEE_CREDENTIALS'))
+credentials = ee.ServiceAccountCredentials(service_account_info['client_email'], key_data=json.dumps(service_account_info))
 print("Initializing GEE")
-ee.Initialize(project="ee-harshsmj1504")
+ee.Initialize(credentials)
+
+
 print("Initizalzation completed")
 print("="*50)
 print("Authenticating: ")
