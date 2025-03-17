@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 # Initialize Google Earth Engine
-ee.Authenticate() 
+ee.Authenticate(auth_mode="appdefault") 
 import os
 # credentials_json = {
 #   "type": "service_account",
