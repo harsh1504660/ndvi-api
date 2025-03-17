@@ -71,4 +71,5 @@ def get_ndvi_soil_moisture(request: PolygonRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 10000))  # Render provides a PORT environment variable
+    uvicorn.run(app, host="0.0.0.0", port=port)
