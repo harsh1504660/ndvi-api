@@ -5,9 +5,9 @@ import ee
 
 # Initialize Google Earth Engine
 service_account_json = os.getenv("GEE_CREDENTIALS")
-print("=*50")
+print("="*50)
 print(service_account_json)
-print("=*50")
+print("="*50)
 
 if service_account_json:
     with open("/tmp/service-account.json", "w") as f:
@@ -15,9 +15,9 @@ if service_account_json:
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/service-account.json"
 
 print("Initializing GEE")
-ee.Initialize()
+ee.Initialize(project="ee-harshsmj1504")
 print("Initizalzation completed")
-print("=*50")
+print("="*50)
 print("Authenticating: ")
 ee.Authenticate()
 print("READY")
