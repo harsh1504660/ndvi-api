@@ -4,11 +4,23 @@ import os
 import ee
 
 # Initialize Google Earth Engine
-service_account_path = "/etc/secrets/service-account.json"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_path
+service_account_json = os.getenv("GEE_CREDENTIALS")
+print("=*50")
+print(service_account_json)
+print("=*50")
 
+if service_account_json:
+    with open("/tmp/service-account.json", "w") as f:
+        f.write(service_account_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/tmp/service-account.json"
+
+print("Initializing GEE")
 ee.Initialize()
-
+print("Initizalzation completed")
+print("=*50")
+print("Authenticating: ")
+ee.Authenticate()
+print("READY")
 app = FastAPI()
 
 # Define request model
