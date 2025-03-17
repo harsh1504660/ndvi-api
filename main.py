@@ -8,17 +8,11 @@ import ee
 
 print("="*50)
 
-service_account_info = json.loads(os.getenv('GEE_CREDENTIALS'))
-credentials = ee.ServiceAccountCredentials(service_account_info['client_email'], key_data=json.dumps(service_account_info))
-print("Initializing GEE")
+service_account_info = json.loads(os.getenv("GEE_CREDENTIALS"))
+credentials = ee.ServiceAccountCredentials(service_account_info["client_email"], key_data=json.dumps(service_account_info))
+
+# Initialize Earth Engine
 ee.Initialize(credentials)
-
-
-print("Initizalzation completed")
-print("="*50)
-print("Authenticating: ")
-ee.Authenticate()
-print("READY")
 app = FastAPI()
 
 # Define request model
