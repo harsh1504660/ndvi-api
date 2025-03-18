@@ -59,6 +59,7 @@ def calculate_ndvi(coords: list[list[float]]):
         scale=250
     ).get("NDVI")
     ndvi = ee.Number(ndvi).divide(10000) 
+    print(ndvi)
     return ndvi.getInfo() if ndvi else None
 
 def calculate_soil_moisture(coords: list[list[float]]):
@@ -73,7 +74,7 @@ def calculate_soil_moisture(coords: list[list[float]]):
     moisture = smap.select("ssm").reduceRegion(
         reducer=ee.Reducer.mean(), geometry=polygon, scale=1000
     ).get("ssm")
-
+    print(moisture)
     return moisture.getInfo() if moisture else None
 
 @app.post("/get_ndvi_soil_moisture/")
