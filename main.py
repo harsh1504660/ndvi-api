@@ -40,7 +40,7 @@ class PolygonRequest(BaseModel):
 def calculate_ndvi(coords: list[list[float]]):
     if len(coords) < 3:
         raise ValueError("A polygon must have at least 3 points.")
-
+    print(coords)
     # Ensure the polygon is closed (first and last points should be the same)
     if coords[0] != coords[-1]:
         coords.append(coords[0])
