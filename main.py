@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os 
+import os
 import json
 import ee
+from datetime import datetime, timedelta
 
 # Initialize Google Earth Engine
-
-print("="*50)
+print("=" * 50)
 
 service_account_info = json.loads(os.getenv("GEE_CREDENTIALS"))
 credentials = ee.ServiceAccountCredentials(service_account_info["client_email"], key_data=json.dumps(service_account_info))
@@ -19,57 +19,78 @@ app = FastAPI()
 class PolygonRequest(BaseModel):
     coords: list[list[float]]
 
-def calculate_ndvi(coords: list[list[float]]):
+def calculate_ndvi(coords: list[list[float]], days: int = 7):
     if len(coords) < 3:
         raise ValueError("A polygon must have at least 3 points.")
 
-    # Ensure the polygon is closed (first and last points should be the same)
     if coords[0] != coords[-1]:
         coords.append(coords[0])
 
-    polygon = ee.Geometry.Polygon([coords])  # Convert to Polygon
+    polygon = ee.Geometry.Polygon([coords])
 
-    # Get the MODIS image for the specified period
-    collection = ee.ImageCollection("MODIS/006/MOD13A1") \
-        .filterBounds(polygon) \
-        .sort("system:time_start", False) \
-        .first()   # Use mean to get composite NDVI values
-    
-    ndvi = collection.select("NDVI").reduceRegion(
-        reducer=ee.Reducer.mean(), 
-        geometry=polygon, 
-        scale=250
-    ).get("NDVI")
-    ndvi = ee.Number(ndvi).divide(10000) 
-    return ndvi.getInfo() if ndvi else None
+    # Generate date range for last 'days' days
+    today = datetime.utcnow()
+    results = []
 
-def calculate_soil_moisture(coords: list[list[float]]):
+    for i in range(days):
+        date = today - timedelta(days=i)
+        start_date = date.strftime('%Y-%m-%d')
+        end_date = (date + timedelta(days=1)).strftime('%Y-%m-%d')
+
+        collection = ee.ImageCollection("MODIS/006/MOD13A1") \
+            .filterBounds(polygon) \
+            .filterDate(start_date, end_date) \
+            .mean()
+
+        ndvi = collection.select("NDVI").reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=polygon,
+            scale=250
+        ).get("NDVI")
+
+        if ndvi:
+            results.append({"date": start_date, "ndvi": ee.Number(ndvi).divide(10000).getInfo()})
+
+    return results
+
+def calculate_soil_moisture(coords: list[list[float]], days: int = 7):
     polygon = ee.Geometry.Polygon(coords)
+    today = datetime.utcnow()
+    results = []
 
-    # Use SMAP Soil Moisture data (latest)
-    smap = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
-        .filterBounds(polygon) \
-        .sort("system:time_start", False) \
-        .first()
-    
-    moisture = smap.select("ssm").reduceRegion(
-        reducer=ee.Reducer.mean(), geometry=polygon, scale=1000
-    ).get("ssm")
+    for i in range(days):
+        date = today - timedelta(days=i)
+        start_date = date.strftime('%Y-%m-%d')
+        end_date = (date + timedelta(days=1)).strftime('%Y-%m-%d')
 
-    return moisture.getInfo() if moisture else None
+        smap = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
+            .filterBounds(polygon) \
+            .filterDate(start_date, end_date) \
+            .mean()
+
+        moisture = smap.select("ssm").reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=polygon,
+            scale=1000
+        ).get("ssm")
+
+        if moisture:
+            results.append({"date": start_date, "soil_moisture": ee.Number(moisture).getInfo()})
+
+    return results
 
 @app.post("/get_ndvi_soil_moisture/")
 def get_ndvi_soil_moisture(request: PolygonRequest):
-    """
-    coords: List of coordinates [[lon1, lat1], [lon2, lat2], [lon3, lat3], ...] to form a polygon.
-    """
     coords = request.coords
-    ndvi = calculate_ndvi(coords)
-    moisture = calculate_soil_moisture(coords)
-    
-    return {"ndvi": ndvi, "soil_moisture": moisture}
+    ndvi_values = calculate_ndvi(coords, days=7)
+    moisture_values = calculate_soil_moisture(coords, days=7)
+
+    return {
+        "ndvi_last_7_days": ndvi_values,
+        "soil_moisture_last_7_days": moisture_values
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 10000))  # Render provides a PORT environment variable
+    port = int(os.getenv("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
