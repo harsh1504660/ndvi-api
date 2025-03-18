@@ -57,6 +57,7 @@ def calculate_ndvi(coords: list[list[float]], days: int = 7):
 
     return results
 
+from datetime import datetime, timedelta
 def calculate_soil_moisture(coords: list[list[float]], days: int = 7):
     polygon = ee.Geometry.Polygon(coords)
     today = datetime.utcnow()
@@ -64,22 +65,26 @@ def calculate_soil_moisture(coords: list[list[float]], days: int = 7):
 
     for i in range(days):
         date = today - timedelta(days=i)
-        start_date = date.strftime('%Y-%m-%d')
-        end_date = (date + timedelta(days=1)).strftime('%Y-%m-%d')
+        start_date = (date - timedelta(days=3)).strftime('%Y-%m-%d')  # SMAP data has a 3-day revisit period
+        end_date = date.strftime('%Y-%m-%d')
 
-        smap = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
+        smap_collection = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
             .filterBounds(polygon) \
             .filterDate(start_date, end_date) \
-            .mean()
+            .sort("system:time_start", False) \
+            .limit(1)  # Get the most recent available image
 
-        moisture = smap.select("ssm").reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=polygon,
-            scale=1000
+        if smap_collection.size().getInfo() == 0:
+            results.append({"date": end_date, "soil_moisture": None})  # No data available
+            continue
+
+        smap_image = smap_collection.first()
+
+        moisture = smap_image.select("ssm").reduceRegion(
+            reducer=ee.Reducer.mean(), geometry=polygon, scale=1000
         ).get("ssm")
 
-        if moisture:
-            results.append({"date": start_date, "soil_moisture": ee.Number(moisture).getInfo()})
+        results.append({"date": end_date, "soil_moisture": moisture.getInfo() if moisture else None})
 
     return results
 
