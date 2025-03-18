@@ -1,105 +1,93 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os
+import os 
 import json
 import ee
-from datetime import datetime, timedelta
 
 # Initialize Google Earth Engine
-print("=" * 50)
+
+print("="*50)
 
 service_account_info = json.loads(os.getenv("GEE_CREDENTIALS"))
 credentials = ee.ServiceAccountCredentials(service_account_info["client_email"], key_data=json.dumps(service_account_info))
 
 # Initialize Earth Engine
 ee.Initialize(credentials)
+from fastapi.middleware.cors import CORSMiddleware
+
+# Initialize FastAPI
 app = FastAPI()
+
+# Enable CORS
+origins = [
+    "https://preview--soilwise-ui.lovable.app",  # Allow frontend origin
+    "https://soilwise-ui.lovable.app",           # Allow the main domain (optional)
+    "*"  # Allow all domains (use only for testing)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # Set allowed origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 
 # Define request model
 class PolygonRequest(BaseModel):
     coords: list[list[float]]
 
-def calculate_ndvi(coords: list[list[float]], days: int = 7):
+def calculate_ndvi(coords: list[list[float]]):
     if len(coords) < 3:
         raise ValueError("A polygon must have at least 3 points.")
 
+    # Ensure the polygon is closed (first and last points should be the same)
     if coords[0] != coords[-1]:
         coords.append(coords[0])
 
-    polygon = ee.Geometry.Polygon([coords])
-    today = datetime.utcnow()
-    results = []
+    polygon = ee.Geometry.Polygon([coords])  # Convert to Polygon
 
-    for i in range(days):
-        date = today - timedelta(days=i)
-        start_date = (date - timedelta(days=16)).strftime('%Y-%m-%d')  # Look back 16 days
-        end_date = date.strftime('%Y-%m-%d')
+    # Get the MODIS image for the specified period
+    collection = ee.ImageCollection("MODIS/006/MOD13A1") \
+        .filterBounds(polygon) \
+        .sort("system:time_start", False) \
+        .first()   # Use mean to get composite NDVI values
+    
+    ndvi = collection.select("NDVI").reduceRegion(
+        reducer=ee.Reducer.mean(), 
+        geometry=polygon, 
+        scale=250
+    ).get("NDVI")
+    ndvi = ee.Number(ndvi).divide(10000) 
+    return ndvi.getInfo() if ndvi else None
 
-        collection = ee.ImageCollection("MODIS/006/MOD13A1") \
-            .filterBounds(polygon) \
-            .filterDate(start_date, end_date) \
-            .sort("system:time_start", False) \
-            .limit(1)  # Get the most recent available image
-
-        if collection.size().getInfo() == 0:
-            results.append({"date": end_date, "ndvi": None})  # No data available
-            continue
-
-        image = collection.first()
-
-        ndvi = image.select("NDVI").reduceRegion(
-            reducer=ee.Reducer.mean(),
-            geometry=polygon,
-            scale=250
-        ).get("NDVI")
-
-        results.append({"date": end_date, "ndvi": ee.Number(ndvi).divide(10000).getInfo() if ndvi else None})
-
-    return results
-
-from datetime import datetime, timedelta
-def calculate_soil_moisture(coords: list[list[float]], days: int = 7):
+def calculate_soil_moisture(coords: list[list[float]]):
     polygon = ee.Geometry.Polygon(coords)
-    today = datetime.utcnow()
-    results = []
 
-    for i in range(days):
-        date = today - timedelta(days=i)
-        start_date = (date - timedelta(days=3)).strftime('%Y-%m-%d')  # SMAP data has a 3-day revisit period
-        end_date = date.strftime('%Y-%m-%d')
+    # Use SMAP Soil Moisture data (latest)
+    smap = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
+        .filterBounds(polygon) \
+        .sort("system:time_start", False) \
+        .first()
+    
+    moisture = smap.select("ssm").reduceRegion(
+        reducer=ee.Reducer.mean(), geometry=polygon, scale=1000
+    ).get("ssm")
 
-        smap_collection = ee.ImageCollection("NASA_USDA/HSL/SMAP_soil_moisture") \
-            .filterBounds(polygon) \
-            .filterDate(start_date, end_date) \
-            .sort("system:time_start", False) \
-            .limit(1)  # Get the most recent available image
-
-        if smap_collection.size().getInfo() == 0:
-            results.append({"date": end_date, "soil_moisture": None})  # No data available
-            continue
-
-        smap_image = smap_collection.first()
-
-        moisture = smap_image.select("ssm").reduceRegion(
-            reducer=ee.Reducer.mean(), geometry=polygon, scale=1000
-        ).get("ssm")
-
-        results.append({"date": end_date, "soil_moisture": moisture.getInfo() if moisture else None})
-
-    return results
+    return moisture.getInfo() if moisture else None
 
 @app.post("/get_ndvi_soil_moisture/")
 def get_ndvi_soil_moisture(request: PolygonRequest):
+    """
+    coords: List of coordinates [[lon1, lat1], [lon2, lat2], [lon3, lat3], ...] to form a polygon.
+    """
     coords = request.coords
-    ndvi_values = calculate_ndvi(coords, days=7)
-    moisture_values = calculate_soil_moisture(coords, days=7)
-
-    return {
-        "ndvi_last_7_days": ndvi_values,
-        "soil_moisture_last_7_days": moisture_values
-    }
+    ndvi = calculate_ndvi(coords)
+    moisture = calculate_soil_moisture(coords)
+    
+    return {"ndvi": ndvi, "soil_moisture": moisture}
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 10000))
+    port = int(os.getenv("PORT", 10000))  # Render provides a PORT environment variable
     uvicorn.run(app, host="0.0.0.0", port=port)
