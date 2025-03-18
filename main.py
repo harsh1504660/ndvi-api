@@ -27,29 +27,33 @@ def calculate_ndvi(coords: list[list[float]], days: int = 7):
         coords.append(coords[0])
 
     polygon = ee.Geometry.Polygon([coords])
-
-    # Generate date range for last 'days' days
     today = datetime.utcnow()
     results = []
 
     for i in range(days):
         date = today - timedelta(days=i)
-        start_date = date.strftime('%Y-%m-%d')
-        end_date = (date + timedelta(days=1)).strftime('%Y-%m-%d')
+        start_date = (date - timedelta(days=16)).strftime('%Y-%m-%d')  # Look back 16 days
+        end_date = date.strftime('%Y-%m-%d')
 
         collection = ee.ImageCollection("MODIS/006/MOD13A1") \
             .filterBounds(polygon) \
             .filterDate(start_date, end_date) \
-            .mean()
+            .sort("system:time_start", False) \
+            .limit(1)  # Get the most recent available image
 
-        ndvi = collection.select("NDVI").reduceRegion(
+        if collection.size().getInfo() == 0:
+            results.append({"date": end_date, "ndvi": None})  # No data available
+            continue
+
+        image = collection.first()
+
+        ndvi = image.select("NDVI").reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=polygon,
             scale=250
         ).get("NDVI")
 
-        if ndvi:
-            results.append({"date": start_date, "ndvi": ee.Number(ndvi).divide(10000).getInfo()})
+        results.append({"date": end_date, "ndvi": ee.Number(ndvi).divide(10000).getInfo() if ndvi else None})
 
     return results
 
